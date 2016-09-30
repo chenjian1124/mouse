@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>判断鼠标移入的方向</title>
+		<style type="text/css">
+			#box {
+				width : 366px;
+				height : 366px;
+				margin : 100px auto;
+			}
+			.rectDiv {
+				width : 100px;
+				height : 100px;
+				border : 1px solid black;
+				float : left;
+				margin : 20px 20px 0 0;
+				font-size : 50px;
+				line-height : 100px;
+				text-align : center;
+			}
+			.mask {
+				position : absolute;
+				left : 0;
+				top : 0;
+				z-index : -1;
+				background : red;
+				opacity : 0.5;
+				filter : alpha(opacity=50);
+				width : 0;
+				height : 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="box">
+			<div class="rectDiv">1
+				<div class="mask"></div>
+			</div>
+			<div class="rectDiv">2
+				<div class="mask"></div>
+			</div>
+			<div class="rectDiv">3
+				<div class="mask"></div>
+			</div>
+			<div class="rectDiv">4
+				<div class="mask"></div>
+			</div>
+			<div class="rectDiv">5
+				<div class="mask"></div>
+			</div>
+			<div class="rectDiv">6
+				<div class="mask"></div>
+			</div>
+			<div class="rectDiv">7
+				<div class="mask"></div>
+			</div>
+			<div class="rectDiv">8
+				<div class="mask"></div>
+			</div>
+			<div class="rectDiv">9
+				<div class="mask"></div>
+			</div>
+		</div>
+		
+		<script type="text/javascript" src="myMove.js"></script>
+		<script type="text/javascript">
+			window.onload = function (){
+				var divs = document.getElementsByClassName('rectDiv');
+				// 这里做一个布局转换
+				for(var i = 0; i < divs.length; i++){
+					divs[i].style.left = divs[i].offsetLeft + "px";
+					divs[i].style.top = divs[i].offsetTop + "px";
+				}
+				for(var i = 0; i < divs.length; i++){
+					divs[i].style.position = "absolute";
+					divs[i].style.margin = "0";
+				}
+				
+				
+				// 给所有的div加事件
+				for(var i = 0; i < divs.length; i++){
+					divs[i].onmouseover = function (e){
+						var evt = e || window.event;
+						var direct = judgeDirection(this, evt);
+						showMask(this, direct);
+						
+					}
+					divs[i].onmouseout = function (e){
+						var evt = e || window.event;
+						var direct = judgeDirection(this, evt);
+						hideMask(this, direct);
+					}
+				}
+				
+				function showMask(dom, direct){
+					var mask = dom.getElementsByTagName('div')[0];
+					if(direct == 1){
+						console.log("从上边移入");
+						// 将mask块放到父级的顶端，然后高度置0
+						mask.style.left = "0px";
+						mask.style.top = "0px";
+						mask.style.height = "0px";
+						// mask从border内开始定位，而offsetWidth是包括border的
+						mask.style.width = dom.offsetWidth - 2 + "px";
+						move(mask, {height : dom.offsetHeight - 2});
+					} else if(direct == 2){
+						console.log("从右边移入");
+						mask.style.left = dom.offsetWidth - 2 + "px";
+						mask.style.top = "0px";
+						mask.style.height = dom.offsetHeight - 2 + "px";
+						mask.style.width = "0px";
+						move(mask, {width : dom.offsetWidth - 2, left : 0});
+					} else if(direct == 3){
+						console.log("从下边移入");
+						mask.style.left = "0px";
+						mask.style.top = dom.offsetHeight - 2 + "px";
+						mask.style.height = "0px";
+						mask.style.width = dom.offsetWidth - 2 + "px";
+						move(mask, {height : dom.offsetHeight - 2, top : 0});
+					} else if(direct == 4){
+						console.log("从左边移入");
+						mask.style.left = "0px";
+						mask.style.top = "0px";
+						mask.style.height = dom.offsetHeight - 2 + "px";
+						mask.style.width = "0px";
+						move(mask, {width : dom.offsetWidth - 2});
+					}
+				}
+				
+				function hideMask(dom, direct){
+					var mask = dom.getElementsByTagName('div')[0];
+						
+					if(direct == 1){
+						console.log("从上边移出");
+						move(mask, {height : 0});
+					} else if(direct == 2){
+						console.log("从右边移出");
+						move(mask, {width : 0, left : dom.offsetWidth - 2});
+					} else if(direct == 3){
+						console.log("从下边移出");
+						move(mask, {height : 0, top : dom.offsetHeight - 2});
+					} else if(direct == 4){
+						console.log("从左边移出");
+						move(mask, {width : 0});
+					}
+				}
+				
+				
+				
+				function judgeDirection(dom, evt){
+					// return 1;   从上边移入
+					// return 2;   从右边移入
+					// return 3;   从下边移入
+					// return 4;   从左边移入
+					
+					var toLeft = evt.pageX;
+					var toTop = evt.pageY;
+					
+					// 求出div块中心点的坐标
+					var centerL = dom.offsetLeft + dom.offsetWidth / 2;
+					var centerT = dom.offsetTop + dom.offsetHeight / 2;
+					
+					// 求两条对角线的斜率
+					var positiveK = (dom.offsetTop - centerT) / (dom.offsetLeft - centerL);
+					var negativeK = (dom.offsetTop + dom.offsetHeight - centerT) / (dom.offsetLeft - centerL);
+					
+					// 求鼠标移入点和中心点连线的斜率
+					var k = (toTop - centerT) / (toLeft - centerL);
+					
+					if(k >= negativeK && k <= positiveK){ // 判断是否从左右移入
+						if(toLeft < centerL){  
+							return 4;
+						} else {
+							return 2;
+						}
+					} else {  // else 从上下移入
+						if(toTop < centerT){
+							return 1;
+						} else {
+							return 3;
+						}
+					}
+				}
+			
+			}	
+		</script>
+	</body>
+</html>
